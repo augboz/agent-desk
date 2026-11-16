@@ -1,17 +1,17 @@
 {
   "order": [
-    "skier",
-    "boarder_1",
-    "boarder_2",
-    "boarder_3",
-    "snowman"
+    "skier_1",
+    "skier_2",
+    "skier_3",
+    "skier_4",
+    "skier_5"
   ],
   "names": {
-    "skier": "Skier",
-    "boarder_1": "Snowboarder",
-    "boarder_2": "Snowboarder",
-    "boarder_3": "Snowboarder",
-    "snowman": "Snowman"
+    "skier_1": "Skier",
+    "skier_2": "Skier",
+    "skier_3": "Skier",
+    "skier_4": "Skier",
+    "skier_5": "Skier"
   },
   "scale": {}
 }

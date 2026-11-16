@@ -11,22 +11,16 @@ It sleeps while the chat is idle and wakes up and works while Claude is busy.
 A progress bar fills as Claude ticks off its task list, and a "!" pops up when
 Claude needs your answer.
 
-![Wizards on the taskbar](docs/strip-wizards.png)
-
-![Skiers on the taskbar](docs/strip-skiers.png)
-
-![Animals on the taskbar](docs/strip-animals.png)
+![Agent Desk on the Windows 11 taskbar: wizards on the strip, two pinned status cards, and the big window](docs/screenshot.png)
 
 > [!IMPORTANT]
-> **Bring your own characters.** The wizards, skiers and animals above are
-> only basic placeholders. Each has a single picture, so "asleep" is just the
+> **Bring your own characters.** The wizards above (and the skiers and animals)
+> are only basic placeholders. Each has a single picture, so "asleep" is just the
 > same picture dimmed. Agent Desk is meant to be used with your own **awake**
 > and **asleep** pictures (your favourite characters, your friends, your
 > team), and it looks far better that way. It takes a couple of minutes; see
 > [Your own characters](#your-own-characters), or right-click the strip →
 > **Use your own pictures…**.
-
-![The big window with pinned status cards](docs/window.png)
 
 ## Features
 

@@ -26,11 +26,12 @@ THEMES = {
                 ("wizard_3", "Wizard", "Woman mage", "Default"),
                 ("wizard_4", "Wizard", "Man mage", "Light"),
                 ("wizard_5", "Wizard", "Woman mage", "Medium-Dark")],
-    "skiers": [("skier", "Skier", "Skier", None),
-               ("boarder_1", "Snowboarder", "Snowboarder", "Light"),
-               ("boarder_2", "Snowboarder", "Snowboarder", "Medium-Dark"),
-               ("boarder_3", "Snowboarder", "Snowboarder", "Medium"),
-               ("snowman", "Snowman", "Snowman", None)],
+    # skiers: five different faces, each with ski goggles pushed up (a goggle colour each)
+    "skiers": [("skier_1", "Skier", "Man red hair", "Light", 0),
+               ("skier_2", "Skier", "Woman curly hair", "Medium-Dark", 120),
+               ("skier_3", "Skier", "Man beard", "Medium", 60),
+               ("skier_4", "Skier", "Woman white hair", "Light", 200),
+               ("skier_5", "Skier", "Man curly hair", "Dark", 30)],
     "animals": [("sloth", "Sloth", "Sloth", None), ("otter", "Otter", "Otter", None),
                 ("fox", "Fox", "Fox", None), ("frog", "Frog", "Frog", None), ("cat", "Cat", "Cat", None)],
 }
@@ -50,6 +51,30 @@ def fetch(name, tone):
     return im.crop(im.getbbox())
 
 
+def hue(im, shift):
+    """Rotate the colours of a picture (0-255 around the colour wheel), keeping transparency."""
+    a = im.getchannel("A")
+    h, s, v = im.convert("RGB").convert("HSV").split()
+    out = Image.merge("HSV", (h.point(lambda x: (x + shift) % 256), s, v)).convert("RGB").convert("RGBA")
+    out.putalpha(a)
+    return out
+
+
+def with_goggles(head, goggles, shift):
+    """A face with ski goggles pushed up on the forehead."""
+    c = Image.new("RGBA", (300, 300), (0, 0, 0, 0))
+    c.alpha_composite(head.resize((256, 256), Image.LANCZOS), (22, 44))
+    lens = hue(goggles.crop((16, 108, 240, 240)), shift).resize((176, 104), Image.LANCZOS)
+    c.alpha_composite(lens, (62, 34))
+    return c.crop(c.getbbox())
+
+
+def fetch_full(name, tone):
+    with urllib.request.urlopen(url(name, tone), timeout=30) as r:
+        data = r.read(5_000_000)
+    return Image.open(io.BytesIO(data), formats=["PNG"]).convert("RGBA")
+
+
 def tall(im, h=256):
     return im.resize((max(1, round(im.width * h / im.height)), h), Image.LANCZOS)
 
@@ -64,10 +89,11 @@ def asleep(im):
 
 
 def face(im, size=128):
-    """Round face for the status cards: a square from the top of the picture."""
+    """Round face for the status cards: a square from the top of the picture
+    (for a picture that's only a face, the whole face)."""
     side = min(im.width, im.height)
-    x0 = (im.width - side) // 2
-    sq = im.crop((x0, 0, x0 + side, side)).resize((size * 4, size * 4), Image.LANCZOS)
+    x0, y0 = (im.width - side) // 2, (im.height - side) // 2 if im.height <= im.width * 1.15 else 0
+    sq = im.crop((x0, y0, x0 + side, y0 + side)).resize((size * 4, size * 4), Image.LANCZOS)
     bg = Image.new("RGBA", sq.size, (255, 255, 255, 255))
     bg.alpha_composite(sq)
     mask = Image.new("L", sq.size, 0)
@@ -79,8 +105,11 @@ def face(im, size=128):
 def main():
     for theme, chars in THEMES.items():
         tdir = os.path.join(OUT, theme)
-        for folder, _, name, tone in chars:
-            im = fetch(name, tone)
+        for folder, _, name, tone, *goggle_hue in chars:
+            if goggle_hue:  # a face wearing ski goggles
+                im = with_goggles(fetch_full(name, tone), fetch_full("Goggles", None), goggle_hue[0])
+            else:
+                im = fetch(name, tone)
             d = os.path.join(tdir, folder)
             os.makedirs(d, exist_ok=True)
             tall(im).save(os.path.join(d, "awake.png"), optimize=True)
