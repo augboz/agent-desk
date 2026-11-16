@@ -1,0 +1,17 @@
+{
+  "order": [
+    "skier",
+    "boarder_1",
+    "boarder_2",
+    "boarder_3",
+    "snowman"
+  ],
+  "names": {
+    "skier": "Skier",
+    "boarder_1": "Snowboarder",
+    "boarder_2": "Snowboarder",
+    "boarder_3": "Snowboarder",
+    "snowman": "Snowman"
+  },
+  "scale": {}
+}

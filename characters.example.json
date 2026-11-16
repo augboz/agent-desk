@@ -1,0 +1,30 @@
+{
+  "_comment": "Copy next to your pictures as characters.json, then: python make_characters.py THAT_FOLDER",
+  "characters": {
+    "fox": {
+      "name": "Fox",
+      "asleep": "fox_sleeping.png",
+      "awake": "fox_awake.png",
+      "face": [
+        "fox_awake.png",
+        [
+          40,
+          20,
+          240,
+          220
+        ]
+      ]
+    },
+    "owl": {
+      "asleep": "owl.png:L",
+      "awake": "owl.png:R",
+      "scale": 0.9
+    },
+    "robot": {
+      "asleep": "robot.png:L",
+      "awake": "robot.png:R",
+      "bg_min": 250
+    }
+  },
+  "star": "star.png"
+}

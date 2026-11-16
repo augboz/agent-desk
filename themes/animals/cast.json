@@ -1,0 +1,17 @@
+{
+  "order": [
+    "sloth",
+    "otter",
+    "fox",
+    "frog",
+    "cat"
+  ],
+  "names": {
+    "sloth": "Sloth",
+    "otter": "Otter",
+    "fox": "Fox",
+    "frog": "Frog",
+    "cat": "Cat"
+  },
+  "scale": {}
+}

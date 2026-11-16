@@ -1,0 +1,3 @@
+# Optional: picture characters and the round faces on the cards.
+# Without Pillow, Agent Desk still runs with the drawn fish.
+Pillow>=13.0.0

@@ -1,0 +1,31 @@
+# Agent Desk is a folder of scripts, not a package: this file only configures the tools.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "C4", "RUF"]
+ignore = [
+    "E501",    # long lines: the formatter's call
+    "E731",    # small lambdas are fine for Tk callbacks
+    "SIM105",  # try/except/pass reads clearer here than contextlib.suppress
+    "RUF001",  # the cards use real "…" and emoji characters on purpose
+    "RUF002",
+    "RUF003",
+    "E741",    # l, t, r, b for screen rectangles
+    "RUF012",  # constant tables on classes
+    "B007", "RUF059",  # unpacking a whole tuple documents its shape
+    "SIM112",  # Windows env names are case-insensitive; SystemRoot is the real spelling
+    "UP031", "B905", "RUF005", "SIM102",
+    "B023",    # the lambdas in scenes.py are called inside the same loop pass
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agent_desk", "cards", "cast", "desk_window", "detect", "paths",
+                     "progress", "scenes", "taskbar_strip"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["gui: opens Tk windows (skipped where Tk can't start)"]

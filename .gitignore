@@ -1,0 +1,24 @@
+# Your own character pictures (and the sources you cut them from) stay on your machine
+characters/
+character-sources/
+
+# Settings and logs from older versions (now kept in %APPDATA%\AgentDesk)
+config.json
+config.json.tmp
+agent_desk.log
+agent_desk.log.1
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
