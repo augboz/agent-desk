@@ -11,7 +11,7 @@ It sleeps while the chat is idle and wakes up and works while Claude is busy.
 A progress bar fills as Claude ticks off its task list, and a "!" pops up when
 Claude needs your answer.
 
-![Agent Desk on the Windows 11 taskbar: wizards on the strip, two pinned status cards, and the big window](docs/screenshot.png)
+![Agent Desk on the Windows 11 taskbar: wizards on the strip, with two pinned status cards above it](docs/screenshot.png)
 
 > [!IMPORTANT]
 > **Bring your own characters.** The wizards above (and the skiers and animals)
@@ -48,6 +48,21 @@ Claude needs your answer.
 - **Characters.** Pick a theme with right-click → **Characters**: Wizards,
   Skiers, Animals, drawn Fish, or **My own pictures**. The built-in themes are
   basic placeholders; your own pictures are the real thing.
+
+## The big window
+
+The strip is the main thing, but you can also open a bigger window. Click the
+small icon in the strip's top-right corner, and click it again to put the
+window away.
+
+- **Same characters:** the same 5 chats, played by the same characters as on
+  the strip.
+- **Status cards:** click a character to pin its card, which stacks above the
+  window.
+- **Move and resize:** drag it anywhere, resize it from its edges or with the
+  mouse wheel, and right-click it for options.
+
+![The big window with two working wizards' status cards pinned above it](docs/window.png)
 
 ## Install
 
