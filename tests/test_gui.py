@@ -85,3 +85,17 @@ def test_still_mode_draws_rarely_and_wakes_for_the_mouse(root, no_log, monkeypat
     d.mouse = (10, 10)
     assert d.frame_ms() == desk_window.TICK_MS
     assert no_log == []
+
+
+def test_cards_follow_a_new_screen_scale(root, no_log):
+    import cards
+    stack = cards.PinStack(root)
+    agent = {"id": "a", "name": "A chat", "state": "working"}
+    stack.show([agent], None, {}, lambda a: None)
+    stack.set_scale(1.0)
+    stack.show([agent], None, {}, lambda a: None)
+    small = stack.win.winfo_reqheight(), stack.font.cget("size")
+    stack.set_scale(2.5)
+    stack.show([agent], None, {}, lambda a: None)
+    assert stack.font.cget("size") == -int(9 * 2.5) and small[1] == -9
+    assert no_log == []

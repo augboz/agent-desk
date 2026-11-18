@@ -243,7 +243,10 @@ class Cast:
         src = self.src.get((name, pose))
         if src is None:
             src = self.src[(name, pose)] = Image.open(os.path.join(DIR, name, pose + ".png"), formats=["PNG"]).convert("RGBA")
-        s = min(max_w / src.width, max_h / src.height) * SCALE.get(name, 1.0)
+        # Everyone the same height (times their size tweak), so the cast looks
+        # even on any strip. Only when a picture is too wide for its spot does it
+        # shrink to fit, and cap_h keeps everyone inside the strip.
+        s = min(max_h / src.height * SCALE.get(name, 1.0), max_w / src.width)
         if cap_h:
             s = min(s, cap_h / src.height)
         w, h = max(1, round(src.width * s)), max(1, round(src.height * s))

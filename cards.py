@@ -142,6 +142,13 @@ class PinStack:
         self.win = None
         self.k = max(1.0, round(owner.winfo_fpixels("1i") / 96 * 2) / 2)
 
+    def set_scale(self, k):
+        """The owner moved to a screen with a different scaling (see TaskbarStrip.dpi_scale)."""
+        if k != self.k:
+            self.k = k
+            if self.win is not None:
+                self.font.configure(size=-int(9 * k))
+
     def hide(self):
         if self.win is not None and self.win.state() != "withdrawn":
             self.win.withdraw()

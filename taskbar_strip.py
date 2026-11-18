@@ -34,6 +34,7 @@ user32.MonitorFromWindow.restype = wt.HANDLE
 
 W_LOGICAL = 190  # fallback width (logical px) until the Start button has been found
 GAP = 1.5  # logical px kept clear next to the Widgets and Start buttons
+W_MAX = 400  # logical px: on a wide monitor the gap can be huge, the strip stays a sensible size
 HERE = os.path.dirname(os.path.abspath(__file__))
 HWND_TOPMOST = wt.HWND(-1)
 SWP_FLAGS = 0x0001 | 0x0002 | 0x0010  # NOSIZE | NOMOVE | NOACTIVATE
@@ -232,7 +233,7 @@ class TaskbarStrip:
                 self.stack.hide()
             return
         (l, t, r, b), mon = tb
-        k = self.k
+        k = self.dpi_scale()
         gap = int(GAP * k)
         lay = self.layout
         spot = self.spot  # remembered {"x": left edge, "w": width}, screen px
@@ -256,7 +257,7 @@ class TaskbarStrip:
             # Fixed size from then on. It only gets narrower if the Start button
             # moves left far enough that the strip would cover it.
             w = min(spot["w"], room)
-        w = max(int(60 * k), min(w, r - gap - x0))
+        w = max(int(60 * k), min(w, r - gap - x0, int(W_MAX * k)))
         geo = f"{w}x{b - t}+{x0}+{t}"
         if not self.shown:
             self.win.deiconify()
@@ -269,6 +270,21 @@ class TaskbarStrip:
         from desk_window import menu_open
         if not menu_open():
             user32.SetWindowPos(self.hwnd(), HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS)
+
+    def dpi_scale(self):
+        """How big a logical pixel is on the screen the strip is on right now:
+        2.5 on a laptop at 250%, 1 on a monitor at 100%. It changes when you
+        plug in or unplug a monitor, so it's checked every time the strip is placed."""
+        try:
+            dpi = user32.GetDpiForWindow(self.hwnd())
+        except Exception:
+            dpi = 0
+        if dpi:
+            k = max(1.0, round(dpi / 96 * 2) / 2)
+            if k != self.k:
+                self.k = k
+                self.stack.set_scale(k)
+        return self.k
 
     def round_corners(self):
         try:

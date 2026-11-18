@@ -436,6 +436,7 @@ class DeskWindow:
     def tick(self):
         try:
             if self.win.winfo_viewable():
+                self.follow_dpi()
                 self.draw()
                 self.c.end()
             else:
@@ -448,6 +449,17 @@ class DeskWindow:
         ms = self.frame_ms()
         self._slow = ms >= 500
         self._next = self.win.after(ms, self.tick)
+
+    def follow_dpi(self):
+        """Moved to a screen with other scaling (a monitor plugged in or out): size things for it."""
+        try:
+            dpi = ctypes.windll.user32.GetDpiForWindow(ctypes.windll.user32.GetParent(self.win.winfo_id()))
+        except Exception:
+            return
+        k = max(1.0, round(dpi / 96 * 2) / 2) if dpi else self.k
+        if k != self.k:
+            self.k = k
+            self.stack.set_scale(k)
 
     def soon(self):
         """Draw the next frame right away, not after a slow wait (the mouse came, the scene changed)."""
