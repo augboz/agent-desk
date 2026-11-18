@@ -24,6 +24,7 @@ import tkinter as tk
 import cards
 import cast
 import scenes
+from frame_canvas import FrameCanvas
 
 user32 = ctypes.windll.user32
 user32.GetParent.restype = wt.HWND
@@ -141,7 +142,7 @@ class TaskbarStrip:
         self.win.attributes("-topmost", True)
         self.win.withdraw()
         self.k = max(1.0, round(self.win.winfo_fpixels("1i") / 96 * 2) / 2)
-        self.c = tk.Canvas(self.win, highlightthickness=0, bd=0, bg="#174a78")
+        self.c = FrameCanvas(self.win, highlightthickness=0, bd=0, bg="#174a78")
         self.c.pack(fill="both", expand=True)
         self.layout = TaskbarLayout()
         self.win.bind("<Destroy>", lambda e: e.widget is self.win and self.layout.stop())
@@ -169,6 +170,7 @@ class TaskbarStrip:
         c.bind("<Leave>", lambda e: setattr(self, "mouse", None))
         c.bind("<Button-3>", self.right_click)
         c.bind("<ButtonRelease-1>", self.left_click)
+        self._next, self._slow = None, False
         self.tick()
 
     def on_icon(self, x, y):
@@ -177,6 +179,7 @@ class TaskbarStrip:
 
     def motion(self, e):
         self.mouse = (e.x, e.y)
+        self.soon()
         cur = "hand2" if self.on_icon(e.x, e.y) else ""
         if self.c.cget("cursor") != cur:
             self.c.configure(cursor=cur)
@@ -211,6 +214,7 @@ class TaskbarStrip:
 
     def set_style(self):
         self.last_place = 0  # resize right away
+        self.soon()
         if self.on_change:
             self.on_change()
 
@@ -310,6 +314,7 @@ class TaskbarStrip:
                 if self.c.winfo_width() >= 10:
                     self.draw_stars()
                     self.draw_icon()
+                self.c.end()
                 self.hover()
                 self.draw_pins()
         except tk.TclError:
@@ -319,14 +324,39 @@ class TaskbarStrip:
 
             from desk_window import log_error
             log_error(traceback.format_exc())
-        self.win.after(50, self.tick)
+        ms = self.frame_ms()
+        self._slow = ms >= 500
+        self._next = self.win.after(ms, self.tick)
+
+    def soon(self):
+        """Draw the next frame right away, not after a slow wait (the mouse came, the look changed)."""
+        if self._slow and self._next:
+            self.win.after_cancel(self._next)
+            self._slow = False
+            self._next = self.win.after(0, self.tick)
+
+    def frame_ms(self):
+        """How long until the next frame.
+
+        Mouse over the strip: 20 a second, so hovering feels instant. Otherwise
+        with animations on, 20 a second while anyone's awake and 10 while they all
+        sleep (the z's drift slowly). With them off nothing moves, so twice a
+        second is plenty to pick up a chat waking up or falling asleep.
+        """
+        if self.mouse is not None:
+            return 50
+        if not self.shown:
+            return 100
+        if not cast.ANIMATE and self.using_cast():
+            return 500
+        return 50 if any(a.get("state") != "sleeping" for a in self.by_id.values()) else 100
 
     def draw(self):
         c, k = self.c, self.k
         w, h = c.winfo_width(), c.winfo_height()
         if w < 10:
             return
-        c.delete("all")
+        c.begin()
         P = scenes.Pen(c, k)
         L, H = w / k, h / k
         t = time.monotonic()
@@ -433,7 +463,7 @@ class TaskbarStrip:
         """
         c, k = self.c, self.k
         size = int(cast.STAR * k)
-        bob = math.sin(time.monotonic() * 0.9) * 0.3 * k
+        bob = math.sin(time.monotonic() * 0.9) * 0.3 * k if cast.ANIMATE else 0
         img = self.star(size)
         for x0, y0, x1, y1, a in self.hits:
             if a["id"] not in self.pins:

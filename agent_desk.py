@@ -58,7 +58,7 @@ def clean_config(raw):
     for key, lo, hi in (("w", 120, 4000), ("h", 70, 3000)):
         if _num(raw.get(key)):
             out[key] = int(min(max(raw[key], lo), hi))
-    for key in ("names", "topmost", "strip"):
+    for key in ("names", "topmost", "strip", "animate"):
         if isinstance(raw.get(key), bool):
             out[key] = raw[key]
     for key in ("scene", "strip_style", "theme"):
@@ -122,6 +122,7 @@ class App:
         self.provider = DemoAgents() if demo else LiveAgents()
         self.use_strip = tk.BooleanVar(value=cfg.get("strip", True))
         self.use_cast = tk.BooleanVar(value=cfg.get("strip_style", "cast") == "cast")
+        self.animate = tk.BooleanVar(value=cfg.get("animate", False))  # off: lightest on the PC
         self.look = tk.StringVar()  # a theme name, or "fish"
         self.own_sig, self.own_busy, self.own_done = None, False, False  # your own pictures
         self.chars = dict(cfg.get("chars", {}))
@@ -134,9 +135,11 @@ class App:
 
         options = [None, ("cascade", "Characters", self.look_items),
                    ("cmd", "Use your own pictures…", self.own_pictures_help),
+                   ("check", "Animations", self.animate, self.set_animate),
                    ("check", "Show on the taskbar", self.use_strip, self.toggle_strip)]
         import cast
         import scenes
+        cast.ANIMATE = self.animate.get()
         cast.shared(self.chars)  # tank and strip share one cast and your picks
         theme = cast.set_theme(cfg.get("theme"))
         self.look.set(theme if self.use_cast.get() else "fish")
@@ -166,6 +169,7 @@ class App:
                    None,
                    ("cascade", "Characters", self.look_items),
                    ("cmd", "Use your own pictures…", self.own_pictures_help),
+                   ("check", "Animations", self.animate, self.set_animate),
                    ("check", "Show on the taskbar", self.use_strip, self.toggle_strip),
                    ("cmd", "Quit Agent Desk", self.quit)]
         self.strip = TaskbarStrip(self.root, self.provider, self.desk,
@@ -209,6 +213,16 @@ class App:
         nx, ny = min(max(x, l), r - w), min(max(y, t), b - h)
         if (nx, ny) != (x, y):
             win.geometry(f"+{int(nx)}+{int(ny)}")
+
+    def set_animate(self):
+        """Hopping, drifting z's and clouds. Off, the characters still wake up and
+        fall asleep, but nothing else moves and the app barely uses the CPU."""
+        import cast
+        cast.ANIMATE = self.animate.get()
+        for w in (self.strip, self.desk):
+            if w:
+                w.soon()
+        self.save()
 
     def look_items(self):
         """The Characters sub-menu: your own pictures, the basic themes, then the fish."""
@@ -309,7 +323,8 @@ class App:
             return
         import cast
         st.update(version=CONFIG_VERSION, strip=self.use_strip.get(), chars=self.chars,
-                  strip_style="cast" if self.use_cast.get() else "fish", theme=cast.THEME)
+                  strip_style="cast" if self.use_cast.get() else "fish", theme=cast.THEME,
+                  animate=self.animate.get())
         if self.strip and self.strip.spot:
             st["strip_spot"] = self.strip.spot
         elif "strip_spot" in self.cfg:

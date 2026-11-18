@@ -8,9 +8,11 @@ a ❗ (needs you).
 import math
 import os
 import time
+import tkinter.font as tkfont
 
 import cast
 import scenes
+from frame_canvas import FrameCanvas
 
 STATE_DOT = {"working": "#3fcf7f", "sleeping": "#7fb8e6", "waiting": "#ffa62b"}
 CARD_BG, CARD_EDGE = "#ffffff", "#a9d6f5"
@@ -73,7 +75,7 @@ def draw_face(c, k, who, state, fx, cy, fs):
 
 def draw_state(c, k, state, right, cy):
     """The state symbol, right-aligned at x=right."""
-    t = time.monotonic()
+    t = time.monotonic() if cast.ANIMATE else 0.0
     if state == "working":
         r = 1.5 * k
         for i in range(3):  # three still dots; a gentle, slow glow passes along them
@@ -154,13 +156,15 @@ class PinStack:
             self.win = tk.Toplevel(self.owner)
             self.win.overrideredirect(True)
             self.win.attributes("-transparentcolor", "#010203")
-            self.c = tk.Canvas(self.win, highlightthickness=0, bd=0, bg="#010203")
+            self.c = FrameCanvas(self.win, highlightthickness=0, bd=0, bg="#010203")
             self.c.pack(fill="both", expand=True)
+            self.font = tkfont.Font(root=self.win, family="Segoe UI Semibold", size=-int(9 * k))
         if bool(self.win.attributes("-topmost")) != bool(topmost):
             self.win.attributes("-topmost", topmost)
         c = self.c
-        c.delete("all")
+        c.begin()
         f_name = ("Segoe UI Semibold", -int(9 * k))
+        text_h = self.font.metrics("linespace")
         row_h0 = int(17 * k)
         face_px = row_h0 - int(3 * k)
         pad, dot, gap, bar_w = 2.5 * k, face_px + 4 * k, 5 * k, 34 * k
@@ -168,15 +172,13 @@ class PinStack:
         for a in agents:
             name = " ".join(str(a.get("name") or "").split()) or "?"
             name = name if len(name) <= 34 else name[:33] + "\u2026"
-            t1 = c.create_text(0, 0, text=name, anchor="w", fill=CARD_TEXT, font=f_name)
-            b1 = c.bbox(t1)
-            tw = pad + dot + (b1[2] - b1[0]) + 3 * gap + STATE_W * k + gap + bar_w + pad + 2 * k
-            rows.append((a, t1, tw, max(row_h0, (b1[3] - b1[1]) + 5 * k)))
+            tw = pad + dot + self.font.measure(name) + 3 * gap + STATE_W * k + gap + bar_w + pad + 2 * k
+            rows.append((a, name, tw, max(row_h0, text_h + 5 * k)))
         card_w = int(max(r[2] for r in rows))
         row_h = int(max(r[3] for r in rows))
         step = row_h + int(3 * k)
         total = step * len(rows)
-        for i, (a, t1, tw, _) in enumerate(rows):
+        for i, (a, name, tw, _) in enumerate(rows):
             y0 = total - (i + 1) * step  # first pinned at the bottom
             y1, cy = y0 + row_h, y0 + row_h / 2
             if a["id"] == preview:  # hover preview: dashed and dimmer, not pinned yet
@@ -188,8 +190,7 @@ class PinStack:
             draw_face(c, k, who(a), a["state"], pad + 1.5 * k, cy, face_px)
             bx1 = card_w - pad - 2 * k
             bx0, bh = bx1 - bar_w, 3.4 * k
-            c.coords(t1, pad + dot, cy)
-            c.tag_raise(t1)
+            c.create_text(pad + dot, cy, text=name, anchor="w", fill=CARD_TEXT, font=f_name)
             draw_state(c, k, a["state"], bx0 - gap, cy)
             if a["id"] in bars:
                 v, done = bars[a["id"]]
@@ -211,3 +212,4 @@ class PinStack:
             self.win.deiconify()
         if self.win.geometry() != geo:
             self.win.geometry(geo)
+        c.end()

@@ -45,6 +45,10 @@ Claude needs your answer.
 - **A bigger window.** The icon in the strip's top-right corner opens a larger
   scene that works the same way. You can drag it, resize it, and right-click it
   for options.
+- **Light on your PC.** By default the characters keep still: they switch
+  between awake and asleep, and nothing else moves. It only redraws what
+  changed, about twice a second, so it uses around 1% of one CPU core. For
+  hopping characters and drifting z's, tick right-click → **Animations**.
 - **Characters.** Pick a theme with right-click → **Characters**: Wizards,
   Skiers, Animals, drawn Fish, or **My own pictures**. The built-in themes are
   basic placeholders; your own pictures are the real thing.

@@ -25,6 +25,7 @@ THEMES_DIR = os.path.join(HERE, "themes")  # the basic built-in ones
 THEME_LABELS = {"mine": "My own pictures", "wizards": "Wizards", "skiers": "Skiers", "animals": "Animals"}
 DEFAULT_THEME = "wizards"
 SLOTS = 5
+ANIMATE = False  # hops, drifting z's and clouds; off = lightest on the PC (right-click → Animations)
 # A pinned character's star floats above its head, clear of it:
 STAR, STAR_GAP = 8.5, 2.0  # star height and the gap under it, logical px
 STAR_ROOM = STAR + STAR_GAP + 1.0  # headroom a pinned character keeps free above itself
@@ -259,10 +260,11 @@ class Cast:
     def draw(self, strip, P, L, H, agents, bars, t):
         """Draw the cast on the strip's canvas (P is a scenes.Pen in logical px)."""
         c, k = strip.c, strip.k
+        t = t if ANIMATE else 0.0  # still: clouds, z's and hops stay where they are
         P.vgrad(0, 0, L, H, "#7cc8f4", "#d4efff", steps=12)
         for cx, cy, r in ((L * 0.18, 7, 4), (L * 0.62, 5, 3.4), (L * 0.88, 9, 3)):  # little clouds
             drift = (t * 0.2) % (L + 20) - 10
-            x = (cx + drift) % (L + 20) - 10
+            x = round(((cx + drift) % (L + 20) - 10) * k) / k
             P.oval(x, cy, r * 1.8, r * 0.8, "#ffffff")
             P.oval(x + r * 0.6, cy - r * 0.5, r, r * 0.8, "#ffffff")
         P.rect(0, H - 3.5, L, H, "#58b94c")
@@ -295,7 +297,7 @@ class Cast:
             else:
                 hop_max = 1.6
                 room = STAR_ROOM if a["id"] in strip.pins else 1.5  # pinned: space for the star
-                hop = abs(math.sin(t * 1.1 + ph * 6)) * hop_max if st == "working" else 0
+                hop = abs(math.sin(t * 1.1 + ph * 6)) * hop_max if st == "working" and ANIMATE else 0
                 # fits with room for the hop: even the top of a jump stays inside
                 img = self.image(c, name, "awake", (slot - 4) * k, (H - 11) * k,
                                  cap_h=(H - 3 - hop_max - room) * k)
@@ -331,9 +333,11 @@ class CastScene(scenes.Aquarium):
         if not self.cast.ok():
             return super().draw(P, L, agents, t, names)
         H, c, s = scenes.H, P.c, P.s
+        bars = self.bars_now(agents, t)
+        t = t if ANIMATE else 0.0  # still: clouds, z's and hops stay where they are
         P.vgrad(0, 0, L, H, "#68bff2", "#cdeeff", steps=24)
         for i, (cx, cy, r) in enumerate(((0.15, 26, 9), (0.55, 18, 7), (0.85, 34, 8))):
-            x = (cx * L + t * (0.5 + i * 0.15)) % (L + 60) - 30
+            x = round(((cx * L + t * (0.5 + i * 0.15)) % (L + 60) - 30) * s) / s
             P.oval(x, cy, r * 2, r * 0.9, "#ffffff")
             P.oval(x + r * 0.7, cy - r * 0.6, r * 1.1, r * 0.9, "#ffffff")
         P.oval(L * 0.2, 150, L * 0.32, 38, "#8fd27a")  # hills
@@ -343,7 +347,6 @@ class CastScene(scenes.Aquarium):
         for gx in range(6, int(L), 17):
             P.line([(gx, 152 + (gx * 7) % 20), (gx + 1.5, 149 + (gx * 7) % 20)], "#3f9b3c", 1)
 
-        bars = self.bars_now(agents, t)
         main = [a for a in agents if not a.get("sub")]
         # the same 5 chats, in the same spots, as the same characters as the strip
         shown = self.cast.pick_shown(main, t)
@@ -366,7 +369,7 @@ class CastScene(scenes.Aquarium):
                     q = (t * 0.12 + ph + i / 2) % 1
                     P.text(x + 4 + q * 4, top - 2 - q * 6, "z", "#ffffff", size=5.5 + q * 2, bold=True)
             else:  # awake: working ones hop gently on the spot, waiting ones stand still
-                hop = abs(math.sin(t * 1.1 + ph * 6)) * 3.0 if st == "working" else 0
+                hop = abs(math.sin(t * 1.1 + ph * 6)) * 3.0 if st == "working" and ANIMATE else 0
                 img = self.cast.image(c, name, "awake", (slot - 2) * s, 62 * s, cap_h=110 * s)
                 P.oval(x, ground + 1, 11 * (1 - hop / 16), 2.2, "#4a9a40")  # shadow
                 bottom = ground - hop

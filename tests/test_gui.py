@@ -65,3 +65,23 @@ def test_cards_survive_odd_names(root, no_log):
     assert stack.win.state() != "withdrawn"
     stack.show([], None, {}, lambda a: None)
     assert stack.win.state() == "withdrawn"
+
+
+def test_still_mode_draws_rarely_and_wakes_for_the_mouse(root, no_log, monkeypatch):
+    import cast
+    import desk_window
+    if not cast.available():
+        pytest.skip("no character pictures")
+    monkeypatch.setattr(cast, "ANIMATE", False)
+    demo = desk_window.DemoAgents()
+    for a in demo.agents:
+        a["state"], a["_next"] = "sleeping", 1e12  # nobody changes state during the test
+    d = desk_window.DeskWindow(root, demo, "cast", size=(300, 160), pos=(50, 300))
+    pump(root, 0.5)
+    assert d.frame_ms() == 500
+    before = d.c.find_all()
+    pump(root, 1.2)
+    assert d.c.find_all() == before  # nothing moved, so nothing was made again
+    d.mouse = (10, 10)
+    assert d.frame_ms() == desk_window.TICK_MS
+    assert no_log == []

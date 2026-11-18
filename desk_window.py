@@ -15,6 +15,7 @@ import time
 import tkinter as tk
 
 import scenes
+from frame_canvas import FrameCanvas
 
 # Render at the screen's real resolution. Without this Windows stretches the
 # window bitmap on high-DPI screens, which makes everything blurry.
@@ -139,7 +140,7 @@ def set_startup(on):
                        env=env, capture_output=True, creationflags=0x08000000, timeout=30)
     return r.returncode == 0 and startup_enabled()
 
-TICK_MS = 40
+TICK_MS = 50
 STATE_DOT = {"working": "#5be39a", "sleeping": "#7fb8e6", "waiting": "#ffb03b"}
 STATE_WORD = {"working": "working", "sleeping": "napping", "waiting": "needs you"}
 
@@ -229,7 +230,7 @@ class DeskWindow:
         w, h = int(size[0] * self.k), int(size[1] * self.k)
         x, y = pos if pos else (200, 200)
         self.win.geometry(f"{int(w)}x{int(h)}+{int(x)}+{int(y)}")
-        self.c = tk.Canvas(self.win, highlightthickness=0, bd=0, bg="#222")
+        self.c = FrameCanvas(self.win, highlightthickness=0, bd=0, bg="#222")
         self.c.pack(fill="both", expand=True)
         self.scene_key = tk.StringVar(value=scene_key)
         self.fish_choice = dict(fish or {})
@@ -286,6 +287,7 @@ class DeskWindow:
         self.win.bind("<MouseWheel>", wheel)
         c.bind("<Button-3>", self.right_click)
         self.win.after(50, lambda: _round_corners(self.win))
+        self._next, self._slow = None, False
         self.tick()
 
     # ----- options -----
@@ -298,6 +300,7 @@ class DeskWindow:
     def set_scene(self):
         self.scene = scenes.SCENES[self.scene_key.get()]()
         self.scene.fish_choice = self.fish_choice
+        self.soon()
         self.changed()
 
     def set_topmost(self):
@@ -357,6 +360,7 @@ class DeskWindow:
 
     def hover_move(self, e):
         self.mouse = (e.x, e.y)
+        self.soon()
         cur = self.CURSORS[self.edge_at(e.x, e.y)]
         if self.closebox(e.x, e.y) or (not self.edge_at(e.x, e.y) and self.agent_at(e.x, e.y)):
             cur = "hand2"
@@ -433,6 +437,7 @@ class DeskWindow:
         try:
             if self.win.winfo_viewable():
                 self.draw()
+                self.c.end()
             else:
                 self.stack.hide()
         except tk.TclError:
@@ -440,14 +445,35 @@ class DeskWindow:
         except Exception:
             import traceback
             log_error(traceback.format_exc())
-        self.win.after(TICK_MS, self.tick)
+        ms = self.frame_ms()
+        self._slow = ms >= 500
+        self._next = self.win.after(ms, self.tick)
+
+    def soon(self):
+        """Draw the next frame right away, not after a slow wait (the mouse came, the scene changed)."""
+        if self._slow and self._next:
+            self.win.after_cancel(self._next)
+            self._slow = False
+            self._next = self.win.after(0, self.tick)
+
+    def frame_ms(self):
+        """Like the strip: quick under the mouse, twice a second when nothing moves."""
+        import cast
+        if self.mouse:
+            return TICK_MS
+        if not self.win.winfo_viewable():
+            return 200  # put away: just notice soon when it's back
+        if not cast.ANIMATE and self.scene_key.get() == "cast":
+            return 500
+        awake = any(a.get("state") != "sleeping" for a in getattr(self.provider, "agents", ()))
+        return TICK_MS if awake else 100
 
     def draw(self):
         c = self.c
         w, h = c.winfo_width(), c.winfo_height()
         if w < 10:
             return
-        c.delete("all")
+        c.begin()
         s = h / scenes.H
         P = scenes.Pen(c, s)
         L = w / s
@@ -477,7 +503,7 @@ class DeskWindow:
         import cast
         k = self.k
         size = cast.STAR * k * 1.2
-        bob = math.sin(t * 0.9) * 0.3 * k
+        bob = math.sin(t * 0.9) * 0.3 * k if cast.ANIMATE else 0
         shown = [h[4]["id"] for h in self.hits]
         for x0, y0, x1, y1, a in self.hits:
             if a["id"] in self.pins:
