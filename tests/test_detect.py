@@ -84,3 +84,14 @@ def test_recent_closed_newest_first_and_skips_scheduled(claude_home):
 def test_pid_alive():
     assert detect.pid_alive(os.getpid())
     assert not detect.pid_alive(2 ** 31 - 2)
+
+
+def test_a_chat_with_two_processes_shows_once(claude_home):
+    sessions, projects = claude_home
+    for pid, status in ((os.getpid(), "idle"), (os.getppid(), "busy")):
+        (sessions / f"{pid}.json").write_text(json.dumps(
+            {"pid": pid, "sessionId": "twice", "status": status, "cwd": r"C:\code\app", "startedAt": 1}))
+    chat(projects, "twice", "hi", "2026-01-01T10:00:00Z", title="Two windows")
+    found = [a for a in detect.scan() if a["id"] == "twice"]
+    assert len(found) == 1
+    assert found[0]["state"] == "working"  # the busier one wins

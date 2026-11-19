@@ -281,7 +281,15 @@ def scan():
             "seed": sid,
             "started": started if isinstance(started, (int, float)) else 0,
         })
-    agents.sort(key=lambda a: a["started"])
+    # One chat can have two Claude processes (e.g. opened in two places). Show it
+    # once, as the busier of the two, or it takes two spots and two characters.
+    busy = {"waiting": 2, "working": 1}
+    one = {}
+    for a in agents:
+        b = one.get(a["id"])
+        if b is None or busy.get(a["state"], 0) > busy.get(b["state"], 0):
+            one[a["id"]] = a
+    agents = sorted(one.values(), key=lambda a: a["started"])
     result = []
     for a in agents:
         try:
